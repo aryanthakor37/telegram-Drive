@@ -232,8 +232,10 @@ router.post('/sync', protect, async (req, res) => {
       const batchSize = 100;
       let currentOffset = offsetId;
       let hasMore = true;
+      let scannedCount = 0;
+      const maxScan = 300; // Limit scan depth to 300 messages to prevent rate-limits and timeouts
 
-      while (hasMore) {
+      while (hasMore && scannedCount < maxScan) {
         const messages = await client.getMessages('me', {
           limit: batchSize,
           offsetId: currentOffset
@@ -258,6 +260,7 @@ router.post('/sync', protect, async (req, res) => {
             const doc = media.document;
             mimeType = doc.mimeType || 'application/octet-stream';
             fileSize = doc.size ? Number(doc.size) : 0;
+            if (isNaN(fileSize)) fileSize = 0;
 
             const fileNameAttr = doc.attributes?.find(a => a.fileName);
             if (fileNameAttr) {
@@ -272,7 +275,8 @@ router.post('/sync', protect, async (req, res) => {
             const sizes = media.photo?.sizes;
             if (sizes && sizes.length > 0) {
               const largest = sizes[sizes.length - 1];
-              fileSize = largest.size || 0;
+              fileSize = largest.size ? Number(largest.size) : 0;
+              if (isNaN(fileSize)) fileSize = 0;
             }
           } else {
             // No usable media (e.g. webpage, geo, poll)
@@ -291,10 +295,17 @@ router.post('/sync', protect, async (req, res) => {
           });
         }
 
+        scannedCount += messages.length;
+
         if (messages.length < batchSize) {
           hasMore = false;
         } else {
-          currentOffset = messages[messages.length - 1].id;
+          const nextOffset = messages[messages.length - 1].id;
+          // Safeguard: if offset doesn't decrease, break to prevent infinite loop
+          if (nextOffset >= currentOffset && currentOffset !== 0) {
+            break;
+          }
+          currentOffset = nextOffset;
         }
       }
     };
@@ -305,8 +316,19 @@ router.post('/sync', protect, async (req, res) => {
     // Insert new files into DB
     let inserted = 0;
     if (newFiles.length > 0) {
-      const result = await File.insertMany(newFiles, { ordered: false });
-      inserted = result.length;
+      try {
+        const result = await File.insertMany(newFiles, { ordered: false });
+        inserted = result.length;
+      } catch (insertError) {
+        // If it's a bulk write error, we can extract the number of successfully inserted files
+        if (insertError.name === 'MongoBulkWriteError' || insertError.name === 'BulkWriteError') {
+          inserted = insertError.result?.nInserted || 0;
+          console.warn('[Sync] Duplicate files or validation issues skipped. Successfully inserted:', inserted);
+        } else {
+          console.error('[Sync] insertMany critical failure:', insertError);
+          return res.status(500).json({ message: 'Database write failure: ' + insertError.message });
+        }
+      }
     }
 
     res.json({
