@@ -403,7 +403,7 @@ const DashboardLayout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3 px-2 py-1.5 bg-gradient-to-r from-slate-100/60 to-transparent dark:from-dark-950/30 dark:to-transparent border border-slate-200/50 dark:border-slate-800/40 rounded-2xl">
-              <StorageOrb3D percentage={storagePercentage} />
+              <StorageOrb3D percentage={storagePercentage} showPercentage={false} />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center">
                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">Drive Capacity</p>
