@@ -7,6 +7,8 @@ export const pendingClients = new Map();
 
 // Cache to store connected clients by session string to prevent socket leakage
 const connectedClients = new Map();
+// Cache to store active connection promises to prevent race conditions (AUTH_KEY_DUPLICATED)
+const connectionPromises = new Map();
 
 /**
  * Helper to get a connected TelegramClient instance using a saved session string
@@ -21,7 +23,7 @@ export const getConnectedClient = async (sessionString) => {
     throw new Error('Telegram API_ID and API_HASH must be configured in environment variables.');
   }
 
-  // Check cache first to reuse the active connection
+  // 1. Check cache first to reuse the active connection
   if (sessionString && connectedClients.has(sessionString)) {
     const cachedClient = connectedClients.get(sessionString);
     try {
@@ -35,24 +37,46 @@ export const getConnectedClient = async (sessionString) => {
     connectedClients.delete(sessionString);
   }
 
-  const client = new TelegramClient(
-    new StringSession(sessionString || ''),
-    apiId,
-    apiHash,
-    {
-      // useWSS: true is REQUIRED to bypass ISP censorship blocks on raw TCP ports in certain regions (e.g. India)
-      useWSS: true,
-      connectionRetries: 5
-    }
-  );
-
-  await client.connect();
-
-  if (sessionString) {
-    connectedClients.set(sessionString, client);
+  // 2. If there is already an active connection attempt in progress, await it
+  if (sessionString && connectionPromises.has(sessionString)) {
+    return await connectionPromises.get(sessionString);
   }
 
-  return client;
+  // 3. Start a new connection attempt and cache the promise to handle concurrent requests
+  const connectPromise = (async () => {
+    try {
+      const client = new TelegramClient(
+        new StringSession(sessionString || ''),
+        apiId,
+        apiHash,
+        {
+          useWSS: true,
+          connectionRetries: 5
+        }
+      );
+
+      await client.connect();
+
+      if (sessionString) {
+        connectedClients.set(sessionString, client);
+      }
+      return client;
+    } catch (err) {
+      console.error('[Telegram Service] Connection attempt failed:', err);
+      throw err;
+    } finally {
+      // Clean up the connection promise once completed/failed
+      if (sessionString) {
+        connectionPromises.delete(sessionString);
+      }
+    }
+  })();
+
+  if (sessionString) {
+    connectionPromises.set(sessionString, connectPromise);
+  }
+
+  return await connectPromise;
 };
 
 /**

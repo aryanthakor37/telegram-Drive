@@ -142,7 +142,7 @@ const RecentFiles: React.FC = () => {
 
   const handleDownload = (id: string, _name?: string) => {
     const token = localStorage.getItem('token');
-    window.location.href = `${API_URL}/drive/download/${id}?token=${token}`;
+    window.location.href = `${API_URL}/drive/download/${id}?token=${token}&download=true`;
   };
 
   return (

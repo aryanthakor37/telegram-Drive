@@ -30,7 +30,7 @@ const saveMockFolders = (folders) => {
     const dir = path.dirname(MOCK_FOLDERS_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(MOCK_FOLDERS_PATH, JSON.stringify(folders, null, 2));
-  } catch (err) {}
+  } catch (err) { }
 };
 const getMockFiles = () => {
   try {
@@ -45,7 +45,7 @@ const saveMockFiles = (files) => {
     const dir = path.dirname(MOCK_FILES_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(MOCK_FILES_PATH, JSON.stringify(files, null, 2));
-  } catch (err) {}
+  } catch (err) { }
 };
 
 // @desc    Get all files indexed in the drive for current user, optionally filtered by folder
@@ -58,7 +58,7 @@ router.get('/files', protect, async (req, res) => {
     if (global.isMockDB) {
       const files = getMockFiles();
       let userFiles = files.filter(f => f.owner === req.user._id);
-      
+
       if (trash === 'true') {
         userFiles = userFiles.filter(f => f.isDeleted);
       } else {
@@ -78,7 +78,7 @@ router.get('/files', protect, async (req, res) => {
     }
 
     const query = { owner: req.user._id };
-    
+
     if (trash === 'true') {
       query.isDeleted = true;
     } else {
@@ -91,7 +91,7 @@ router.get('/files', protect, async (req, res) => {
         }
       }
     }
-    
+
     let files = await File.find(query).sort({ createdAt: -1 });
     if (category) {
       files = files.filter(f => getFileTypeCategory(f.mimeType || 'application/octet-stream', f.name) === category);
@@ -153,7 +153,7 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
     // 2. Write temp file from memory buffer
     const tempDir = path.resolve('temp');
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-    
+
     // Save with unique name to avoid collisions
     const tempFileName = `upload_${Date.now()}_${req.file.originalname}`;
     const tempFilePath = path.join(tempDir, tempFileName);
@@ -275,7 +275,13 @@ router.post('/sync', protect, async (req, res) => {
             const sizes = media.photo?.sizes;
             if (sizes && sizes.length > 0) {
               const largest = sizes[sizes.length - 1];
-              fileSize = largest.size ? Number(largest.size) : 0;
+              if (largest.size) {
+                fileSize = Number(largest.size);
+              } else if (largest.bytes) {
+                fileSize = largest.bytes.length;
+              } else if (largest.sizes && largest.sizes.length > 0) {
+                fileSize = Number(largest.sizes[largest.sizes.length - 1]);
+              }
               if (isNaN(fileSize)) fileSize = 0;
             }
           } else {
@@ -346,28 +352,28 @@ const getFileTypeCategory = (mimeType, name) => {
   const lower = name.toLowerCase();
   if (mimeType.startsWith('image/')) return 'image';
   if (
-    mimeType.startsWith('video/') || 
-    lower.endsWith('.mp4') || lower.endsWith('.mkv') || lower.endsWith('.avi') || 
-    lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.flv') || 
+    mimeType.startsWith('video/') ||
+    lower.endsWith('.mp4') || lower.endsWith('.mkv') || lower.endsWith('.avi') ||
+    lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.flv') ||
     lower.endsWith('.3gp')
   ) {
     return 'video';
   }
   if (
-    mimeType.includes('zip') || mimeType.includes('tar') || mimeType.includes('rar') || 
+    mimeType.includes('zip') || mimeType.includes('tar') || mimeType.includes('rar') ||
     mimeType.includes('compressed') || mimeType.includes('archive') ||
-    lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.7z') || 
-    lower.endsWith('.tar') || lower.endsWith('.gz') || lower.endsWith('.bz2') || 
+    lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.7z') ||
+    lower.endsWith('.tar') || lower.endsWith('.gz') || lower.endsWith('.bz2') ||
     lower.endsWith('.xz')
   ) {
     return 'archive';
   }
   if (
-    mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('sheet') || 
-    mimeType.includes('presentation') || mimeType.startsWith('text/') || 
-    lower.endsWith('.pdf') || lower.endsWith('.txt') || lower.endsWith('.md') || 
-    lower.endsWith('.csv') || lower.endsWith('.doc') || lower.endsWith('.docx') || 
-    lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.ppt') || 
+    mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('sheet') ||
+    mimeType.includes('presentation') || mimeType.startsWith('text/') ||
+    lower.endsWith('.pdf') || lower.endsWith('.txt') || lower.endsWith('.md') ||
+    lower.endsWith('.csv') || lower.endsWith('.doc') || lower.endsWith('.docx') ||
+    lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.ppt') ||
     lower.endsWith('.pptx')
   ) {
     return 'document';
@@ -392,7 +398,7 @@ router.get('/stats', protect, async (req, res) => {
     const starredCount = files.filter(f => f.isStarred && !f.isDeleted).length;
     const trashCount = files.filter(f => f.isDeleted).length;
     const totalActiveFiles = files.filter(f => !f.isDeleted).length;
-    
+
     // Type breakdown count and size
     const breakdown = {
       image: { count: 0, size: 0 },
@@ -470,8 +476,8 @@ router.get('/download/:id', protect, async (req, res) => {
       let buffer;
       try {
         buffer = await client.downloadMedia(messages[0].media, { thumbSize: 'm' }) ||
-                 await client.downloadMedia(messages[0].media, { thumbSize: 'x' }) ||
-                 await client.downloadMedia(messages[0].media, { thumbSize: 's' });
+          await client.downloadMedia(messages[0].media, { thumbSize: 'x' }) ||
+          await client.downloadMedia(messages[0].media, { thumbSize: 's' });
       } catch (err) {
         console.warn('[Telegram Service] Thumbnail download failed, falling back to full media:', err);
       }
@@ -482,7 +488,30 @@ router.get('/download/:id', protect, async (req, res) => {
     }
 
     // 5. Full file download / Range stream
-    const fileSize = fileMetadata.size || 0;
+    let fileSize = fileMetadata.size || 0;
+
+    // Fallback: If DB metadata has size 0, dynamically check the size from Telegram media object
+    if (fileSize === 0) {
+      const media = messages[0].media;
+      if (media) {
+        if (media.document) {
+          fileSize = media.document.size ? Number(media.document.size) : 0;
+        } else if (media.photo) {
+          const sizes = media.photo.sizes;
+          if (sizes && sizes.length > 0) {
+            const largest = sizes[sizes.length - 1];
+            if (largest.size) {
+              fileSize = Number(largest.size);
+            } else if (largest.bytes) {
+              fileSize = largest.bytes.length;
+            } else if (largest.sizes && largest.sizes.length > 0) {
+              fileSize = Number(largest.sizes[largest.sizes.length - 1]);
+            }
+          }
+        }
+      }
+      if (isNaN(fileSize)) fileSize = 0;
+    }
 
     if (fileSize === 0) {
       res.setHeader('Content-Type', fileMetadata.mimeType || 'application/octet-stream');
@@ -524,10 +553,11 @@ router.get('/download/:id', protect, async (req, res) => {
       res.status(206);
       res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
       res.setHeader('Content-Length', totalBytesToSend);
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileMetadata.name)}"`);
     } else {
       res.status(200);
       res.setHeader('Content-Length', fileSize);
-      if (req.query.download === 'true' || (!fileMetadata.mimeType?.startsWith('video/') && !fileMetadata.mimeType?.startsWith('audio/'))) {
+      if (req.query.download === 'true') {
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileMetadata.name)}"`);
       } else {
         res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileMetadata.name)}"`);
@@ -599,8 +629,8 @@ router.get('/files/recent', protect, async (req, res) => {
       return res.json(userFiles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 20));
     }
     const files = await File.find({ owner: req.user._id, isDeleted: { $ne: true } })
-                            .sort({ createdAt: -1 })
-                            .limit(20);
+      .sort({ createdAt: -1 })
+      .limit(20);
     res.json(files);
   } catch (error) {
     console.error('Get recent files error:', error);
@@ -619,7 +649,7 @@ router.get('/files/starred', protect, async (req, res) => {
       return res.json(userFiles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     }
     const files = await File.find({ owner: req.user._id, isStarred: true, isDeleted: { $ne: true } })
-                            .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 });
     res.json(files);
   } catch (error) {
     console.error('Get starred files error:', error);
@@ -638,7 +668,7 @@ router.get('/files/trash', protect, async (req, res) => {
       return res.json(userFiles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     }
     const files = await File.find({ owner: req.user._id, isDeleted: true })
-                            .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 });
     res.json(files);
   } catch (error) {
     console.error('Get trash files error:', error);
@@ -655,15 +685,15 @@ router.put('/files/:id/star', protect, async (req, res) => {
       const files = getMockFiles();
       const fileIndex = files.findIndex(f => f._id === req.params.id && f.owner === req.user._id);
       if (fileIndex === -1) return res.status(404).json({ message: 'File not found' });
-      
+
       files[fileIndex].isStarred = !files[fileIndex].isStarred;
       saveMockFiles(files);
       return res.json(files[fileIndex]);
     }
-    
+
     const file = await File.findOne({ _id: req.params.id, owner: req.user._id });
     if (!file) return res.status(404).json({ message: 'File not found' });
-    
+
     file.isStarred = !file.isStarred;
     await file.save();
     res.json(file);
@@ -682,15 +712,15 @@ router.put('/files/:id/trash', protect, async (req, res) => {
       const files = getMockFiles();
       const fileIndex = files.findIndex(f => f._id === req.params.id && f.owner === req.user._id);
       if (fileIndex === -1) return res.status(404).json({ message: 'File not found' });
-      
+
       files[fileIndex].isDeleted = !files[fileIndex].isDeleted;
       saveMockFiles(files);
       return res.json(files[fileIndex]);
     }
-    
+
     const file = await File.findOne({ _id: req.params.id, owner: req.user._id });
     if (!file) return res.status(404).json({ message: 'File not found' });
-    
+
     file.isDeleted = !file.isDeleted;
     await file.save();
     res.json(file);
@@ -706,20 +736,20 @@ router.put('/files/:id/trash', protect, async (req, res) => {
 router.put('/files/:id/move', protect, async (req, res) => {
   try {
     const { folderId } = req.body;
-    
+
     if (global.isMockDB) {
       const files = getMockFiles();
       const fileIndex = files.findIndex(f => f._id === req.params.id && f.owner === req.user._id);
       if (fileIndex === -1) return res.status(404).json({ message: 'File not found' });
-      
+
       files[fileIndex].folder = folderId === 'root' ? null : folderId;
       saveMockFiles(files);
       return res.json(files[fileIndex]);
     }
-    
+
     const file = await File.findOne({ _id: req.params.id, owner: req.user._id });
     if (!file) return res.status(404).json({ message: 'File not found' });
-    
+
     file.folder = folderId === 'root' ? null : folderId;
     await file.save();
     res.json(file);

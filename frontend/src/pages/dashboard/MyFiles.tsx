@@ -155,7 +155,7 @@ const MyFiles: React.FC = () => {
 
   const handleDownload = (id: string, _name?: string) => {
     const token = localStorage.getItem('token');
-    window.location.href = `${API_URL}/drive/download/${id}?token=${token}`;
+    window.location.href = `${API_URL}/drive/download/${id}?token=${token}&download=true`;
   };
 
   const handleDeleteFile = async (id: string) => {
@@ -424,13 +424,7 @@ const MyFiles: React.FC = () => {
             <>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <span className="text-brand-500">{selectedFiles.length} selected</span>
-              <button
-                onClick={handleBatchDelete}
-                className="flex items-center gap-1 px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-              >
-                <Trash2 className="w-3 h-3" /> Delete
-              </button>
-              <button onClick={clearSelection} className="text-slate-400 hover:text-slate-600">Clear</button>
+              <button onClick={clearSelection} className="text-slate-400 hover:text-slate-600 hover:underline transition-all">Clear</button>
             </>
           )}
         </div>

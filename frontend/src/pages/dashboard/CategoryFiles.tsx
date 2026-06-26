@@ -4,12 +4,12 @@ import axios from 'axios';
 import { useDrive } from '../../context/DriveContext';
 import {
   File, Image, Video, Music, Archive, FileText, Download, Trash2, Share2,
-  AlertCircle, Star, FileCode, Clock
+  AlertCircle, Star, FileCode, Clock, X
 } from 'lucide-react';
 import FileCard from '../../components/FileCard';
 import ContextMenu from '../../components/ContextMenu';
 import Lightbox from '../../components/Lightbox';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { API_URL } from '../../config/api';
 
@@ -97,7 +97,7 @@ const CategoryFiles: React.FC = () => {
 
   const handleDownload = (id: string, _name?: string) => {
     const token = localStorage.getItem('token');
-    window.location.href = `${API_URL}/drive/download/${id}?token=${token}`;
+    window.location.href = `${API_URL}/drive/download/${id}?token=${token}&download=true`;
   };
 
   const handleDeleteFile = async (id: string) => {
@@ -286,10 +286,7 @@ const CategoryFiles: React.FC = () => {
         {selectedFiles.length > 0 ? (
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-slate-500">{selectedFiles.length} selected</span>
-            <button onClick={handleBatchDelete} className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
-            <button onClick={clearSelection} className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white font-medium">Clear</button>
+            <button onClick={clearSelection} className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold hover:underline transition-all">Clear</button>
           </div>
         ) : files.length > 0 && (
           <div className="flex items-center gap-2 text-xs">
@@ -446,6 +443,33 @@ const CategoryFiles: React.FC = () => {
           ]}
         />
       )}
+
+      {/* Floating Selection Toolbar */}
+      <AnimatePresence>
+        {selectedFiles.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900 dark:bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-5"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 bg-brand-500 rounded-full text-xs font-bold">{selectedFiles.length}</span>
+              <span className="text-sm font-medium">selected</span>
+            </div>
+            <div className="h-5 w-px bg-slate-700"></div>
+            <div className="flex items-center gap-1.5">
+              <button onClick={handleBatchDelete} className="p-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors" title="Delete Selected">
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button onClick={clearSelection} className="p-2 hover:bg-slate-700 rounded-lg transition-colors" title="Clear Selection">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
