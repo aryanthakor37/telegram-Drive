@@ -18,7 +18,13 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://192.168.1.165:5173'];
+  : [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://192.168.1.165:5173',
+      'https://telegram-app-7b622.web.app',
+      'https://telegram-app-7b622.firebaseapp.com'
+    ];
 
 app.use(cors({
   origin: function (origin, callback) {
