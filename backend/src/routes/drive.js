@@ -8,6 +8,7 @@ import { getConnectedClient } from '../services/telegram.js';
 import File from '../models/File.js';
 import User from '../models/User.js';
 import Folder from '../models/Folder.js';
+import bigInt from 'big-integer';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -442,30 +443,126 @@ router.get('/download/:id', protect, async (req, res) => {
       return res.status(404).json({ message: 'File media could not be located in Telegram.' });
     }
 
-    // 4. Download file from message media (with thumbnail support)
-    let buffer;
+    // 4. Download thumbnail if requested (buffered in-memory)
     if (req.query.thumbnail === 'true') {
+      let buffer;
       try {
-        // Try fetching size 'm' (320px) or fallback to 'x' / 's' (90px)
         buffer = await client.downloadMedia(messages[0].media, { thumbSize: 'm' }) ||
                  await client.downloadMedia(messages[0].media, { thumbSize: 'x' }) ||
                  await client.downloadMedia(messages[0].media, { thumbSize: 's' });
       } catch (err) {
         console.warn('[Telegram Service] Thumbnail download failed, falling back to full media:', err);
       }
+      if (buffer) {
+        res.setHeader('Content-Type', fileMetadata.mimeType || 'image/jpeg');
+        return res.send(buffer);
+      }
     }
 
-    if (!buffer) {
-      buffer = await client.downloadMedia(messages[0].media);
+    // 5. Full file download / Range stream
+    const fileSize = fileMetadata.size || 0;
+
+    if (fileSize === 0) {
+      res.setHeader('Content-Type', fileMetadata.mimeType || 'application/octet-stream');
+      res.setHeader('Content-Length', '0');
+      return res.end();
     }
 
-    // 5. Send binary buffer stream
+    // Parse Range header
+    const range = req.headers.range;
+    let start = 0;
+    let end = fileSize - 1;
+
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      start = parseInt(parts[0], 10);
+      end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+      if (isNaN(start)) start = 0;
+      if (isNaN(end)) end = fileSize - 1;
+    }
+
+    if (start < 0) start = 0;
+    if (end >= fileSize) end = fileSize - 1;
+
+    if (start > end) {
+      res.setHeader('Content-Range', `bytes */${fileSize}`);
+      return res.status(416).json({ message: 'Requested range not satisfiable' });
+    }
+
+    // Telegram MTProto requires offsets to be multiples of 4096 bytes (4 KB)
+    const alignedStart = Math.floor(start / 4096) * 4096;
+    const skipBytes = start - alignedStart;
+    const totalBytesToSend = end - start + 1;
+
+    res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Type', fileMetadata.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileMetadata.name)}"`);
-    res.send(buffer);
+
+    if (range) {
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+      res.setHeader('Content-Length', totalBytesToSend);
+    } else {
+      res.status(200);
+      res.setHeader('Content-Length', fileSize);
+      if (req.query.download === 'true' || (!fileMetadata.mimeType?.startsWith('video/') && !fileMetadata.mimeType?.startsWith('audio/'))) {
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileMetadata.name)}"`);
+      } else {
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileMetadata.name)}"`);
+      }
+    }
+
+    // Stream the media chunks
+    const chunkSize = 512 * 1024; // 512 KB
+    let sentBytes = 0;
+
+    const stream = client.iterDownload({
+      file: messages[0].media,
+      offset: bigInt(alignedStart),
+      chunkSize: chunkSize,
+      requestSize: chunkSize
+    });
+
+    let isFirstChunk = true;
+
+    for await (let chunk of stream) {
+      if (isFirstChunk) {
+        isFirstChunk = false;
+        if (skipBytes > 0) {
+          chunk = chunk.slice(skipBytes);
+        }
+      }
+
+      const remainingBytes = totalBytesToSend - sentBytes;
+      if (remainingBytes <= 0) {
+        break;
+      }
+
+      let dataToWrite = chunk;
+      if (chunk.length > remainingBytes) {
+        dataToWrite = chunk.slice(0, remainingBytes);
+      }
+
+      const ok = res.write(dataToWrite);
+      sentBytes += dataToWrite.length;
+
+      if (!ok) {
+        await new Promise((resolve) => res.once('drain', resolve));
+      }
+
+      if (sentBytes >= totalBytesToSend) {
+        break;
+      }
+    }
+    res.end();
   } catch (error) {
-    console.error('File download error:', error);
-    res.status(500).json({ message: error.message || 'Failed to download file from Telegram.' });
+    console.error('File download/stream error:', error);
+    // Only send error response if headers have not been sent yet
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message || 'Failed to download/stream file from Telegram.' });
+    } else {
+      res.end();
+    }
   }
 });
 

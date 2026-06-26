@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, Download, Loader, Info, Music } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download, Loader, Info, Music, RotateCw } from 'lucide-react';
 import { formatBytes } from './FileCard';
 import { API_URL } from '../config/api';
 
@@ -23,6 +23,8 @@ const Lightbox: React.FC<LightboxProps> = ({ files, initialFileId, onClose, onDo
   const [currentIndex, setCurrentIndex] = useState(() => Math.max(0, mediaFiles.findIndex(f => f._id === initialFileId)));
   const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [rotation, setRotation] = useState(0);
+  const [mediaDims, setMediaDims] = useState({ width: 0, height: 0 });
 
   const activeFile = mediaFiles[currentIndex];
   const token = localStorage.getItem('token');
@@ -59,6 +61,26 @@ const Lightbox: React.FC<LightboxProps> = ({ files, initialFileId, onClose, onDo
     };
   }, []);
 
+  useEffect(() => {
+    setRotation(0);
+    setMediaDims({ width: 0, height: 0 });
+  }, [currentIndex]);
+
+  const handleRotate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRotation(prev => (prev + 90) % 360);
+  };
+
+  const isRotated = rotation === 90 || rotation === 270;
+  const scale = isRotated && mediaDims.width && mediaDims.height
+    ? Math.min(mediaDims.width, mediaDims.height) / Math.max(mediaDims.width, mediaDims.height)
+    : 1;
+
+  const mediaStyle = {
+    transform: `rotate(${rotation}deg) scale(${scale})`,
+    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  };
+
   if (!activeFile) return null;
 
   return (
@@ -71,6 +93,11 @@ const Lightbox: React.FC<LightboxProps> = ({ files, initialFileId, onClose, onDo
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {(activeFile.mimeType.startsWith('image/') || activeFile.mimeType.startsWith('video/')) && (
+            <button onClick={handleRotate} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Rotate">
+              <RotateCw className="w-5 h-5" />
+            </button>
+          )}
           <button onClick={() => onDownload(activeFile._id, activeFile.name)} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Download">
             <Download className="w-5 h-5" />
           </button>
@@ -104,8 +131,12 @@ const Lightbox: React.FC<LightboxProps> = ({ files, initialFileId, onClose, onDo
             <img
               src={previewUrl}
               alt={activeFile.name}
+              style={mediaStyle}
               className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl transition-opacity duration-300"
-              onLoad={() => setLoading(false)}
+              onLoad={(e) => {
+                setLoading(false);
+                setMediaDims({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight });
+              }}
               onError={() => setLoading(false)}
             />
           )}
@@ -115,8 +146,12 @@ const Lightbox: React.FC<LightboxProps> = ({ files, initialFileId, onClose, onDo
               src={previewUrl}
               controls
               autoPlay
+              style={mediaStyle}
               className="max-w-full max-h-[85vh] rounded-sm shadow-2xl bg-black"
-              onLoadedData={() => setLoading(false)}
+              onLoadedMetadata={(e) => {
+                setLoading(false);
+                setMediaDims({ width: e.currentTarget.videoWidth, height: e.currentTarget.videoHeight });
+              }}
             />
           )}
 
