@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: telegram-drive-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TG_API_ID
+        sync: false
+      - key: TG_API_HASH
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://telegram-app-7b622.web.app,https://telegram-app-7b622.firebaseapp.com,http://localhost:5173

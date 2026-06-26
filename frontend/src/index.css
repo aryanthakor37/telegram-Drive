@@ -1,0 +1,379 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1e40af;
+  --color-brand-800: #1e3a8a;
+  --color-brand-900: #172554;
+  --color-brand-950: #0f172a;
+
+  --color-dark-50: #f8fafc;
+  --color-dark-100: #f1f5f9;
+  --color-dark-200: #e2e8f0;
+  --color-dark-300: #cbd5e1;
+  --color-dark-400: #94a3b8;
+  --color-dark-500: #64748b;
+  --color-dark-600: #475569;
+  --color-dark-700: #334155;
+  --color-dark-800: #1e293b;
+  --color-dark-850: #182235;
+  --color-dark-900: #111827;
+  --color-dark-950: #0b1120;
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+@layer base {
+  body {
+    font-family: 'Outfit', sans-serif;
+    @apply bg-slate-50 text-slate-800 dark:bg-dark-950 dark:text-dark-100 antialiased selection:bg-brand-500 selection:text-white overflow-x-hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%), 
+      radial-gradient(at 100% 100%, rgba(96, 165, 250, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Sleek professional dark gradient background */
+  .dark body {
+    background-color: #0b1120;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.25) 0px, transparent 60%), 
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.12) 0px, transparent 60%);
+    background-attachment: fixed;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Premium Card & Layout shadows */
+.glass {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background: rgba(24, 34, 53, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.glow-brand {
+  box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.15);
+}
+
+.glow-brand-lg {
+  box-shadow: 0 0 40px -10px rgba(59, 130, 246, 0.25);
+}
+
+/* 3D Custom Perspective & Animation utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.translate-z-0 {
+  transform: translateZ(0px);
+}
+.translate-z-10 {
+  transform: translateZ(10px);
+}
+.translate-z-16 {
+  transform: translateZ(16px);
+}
+.-translate-z-10 {
+  transform: translateZ(-10px);
+}
+.-translate-z-16 {
+  transform: translateZ(-16px);
+}
+
+.animate-spin-slow {
+  animation: spinSlow 24s linear infinite;
+}
+@keyframes spinSlow {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Orbit 3D Path animations with Counter-Rotations */
+.animate-orbit-1 {
+  animation: orbitY1 12s linear infinite;
+  transform-style: preserve-3d;
+}
+.animate-orbit-1 > div {
+  animation: counterOrbitY1 12s linear infinite;
+}
+@keyframes orbitY1 {
+  0% { transform: rotateY(0deg) rotateX(15deg); }
+  100% { transform: rotateY(360deg) rotateX(15deg); }
+}
+@keyframes counterOrbitY1 {
+  0% { transform: rotateY(360deg) rotateX(-15deg); }
+  100% { transform: rotateY(0deg) rotateX(-15deg); }
+}
+
+.animate-orbit-2 {
+  animation: orbitY2 9s linear infinite;
+  transform-style: preserve-3d;
+}
+.animate-orbit-2 > div {
+  animation: counterOrbitY2 9s linear infinite;
+}
+@keyframes orbitY2 {
+  0% { transform: rotateY(180deg) rotateZ(10deg); }
+  100% { transform: rotateY(540deg) rotateZ(10deg); }
+}
+@keyframes counterOrbitY2 {
+  0% { transform: rotateY(-180deg) rotateZ(-10deg); }
+  100% { transform: rotateY(-540deg) rotateZ(-10deg); }
+}
+
+.animate-orbit-3 {
+  animation: orbitY3 16s linear infinite;
+  transform-style: preserve-3d;
+}
+.animate-orbit-3 > div {
+  animation: counterOrbitY3 16s linear infinite;
+}
+@keyframes orbitY3 {
+  0% { transform: rotateY(90deg) rotateX(-10deg); }
+  100% { transform: rotateY(450deg) rotateX(-10deg); }
+}
+@keyframes counterOrbitY3 {
+  0% { transform: rotateY(-90deg) rotateX(10deg); }
+  100% { transform: rotateY(-450deg) rotateX(10deg); }
+}
+
+.animate-orbit-4 {
+  animation: orbitY4 14s linear infinite;
+  transform-style: preserve-3d;
+}
+.animate-orbit-4 > div {
+  animation: counterOrbitY4 14s linear infinite;
+}
+@keyframes orbitY4 {
+  0% { transform: rotateY(-90deg) rotateZ(-15deg); }
+  100% { transform: rotateY(270deg) rotateZ(-15deg); }
+}
+@keyframes counterOrbitY4 {
+  0% { transform: rotateY(90deg) rotateZ(15deg); }
+  100% { transform: rotateY(-270deg) rotateZ(15deg); }
+}
+
+/* Card 3D Lift & Tilt Transition */
+.card-3d {
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+  transform-style: preserve-3d;
+}
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(5deg) rotateY(-4deg);
+  box-shadow: 
+    0 25px 35px -10px rgba(0, 0, 0, 0.25), 
+    0 10px 15px -10px rgba(0, 0, 0, 0.15),
+    0 0 25px -5px rgba(59, 130, 246, 0.15);
+}
+
+/* Slow float animation for 3D elements */
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite alternate;
+}
+@keyframes floatSlow {
+  0% { transform: translateY(-6px); }
+  100% { transform: translateY(8px); }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 4s ease-in-out infinite alternate;
+}
+@keyframes pulseSlow {
+  0% { opacity: 0.7; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1.04); }
+}
+
+/* Animated Shimmering Mesh Gradient */
+.animate-mesh-gradient {
+  background-size: 200% 200%;
+  animation: meshGradientMove 8s ease infinite alternate;
+}
+@keyframes meshGradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Cinematic 3D Modal Zoom Entrance */
+.animate-modal-zoom-3d {
+  animation: modalZoom3D 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform-origin: center center;
+}
+@keyframes modalZoom3D {
+  from {
+    transform: scale(0.85) rotateX(-20deg) translateZ(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotateX(0deg) translateZ(0);
+    opacity: 1;
+  }
+}
+
+/* 3D Sidebar Entrance */
+.animate-sidebar-3d {
+  animation: sidebar3D 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes sidebar3D {
+  from {
+    transform: translateX(-100%) rotateY(-12deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+/* Staggered Grid Item Entrance */
+.animate-grid-item {
+  animation: gridItemEntrance 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0;
+}
+@keyframes gridItemEntrance {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Folder icon bouncy hover scaling */
+.folder-btn-hover:hover svg {
+  transform: scale(1.18) rotate(5deg);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 3D Tab Switch transition */
+.animate-tab-switch {
+  animation: tabSwitch3D 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform-style: preserve-3d;
+}
+@keyframes tabSwitch3D {
+  from {
+    transform: translateY(12px) rotateX(-4deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+/* Animated slide-in for table rows */
+.animate-row {
+  animation: rowEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+@keyframes rowEntrance {
+  from {
+    transform: translateX(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Premium Focus neon pulse glow */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.35) !important;
+  animation: borderGlowPulse 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes borderGlowPulse {
+  0% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.55), 0 0 4px rgba(139, 92, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+}
+
+/* Custom slim scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.65);
+}
+
+/* Horizontal scrollbar for category tabs */
+.custom-scrollbar-x::-webkit-scrollbar {
+  height: 3px;
+}
+.custom-scrollbar-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}

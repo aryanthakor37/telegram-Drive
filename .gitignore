@@ -1,0 +1,25 @@
+# Dependency directories
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Production build outputs
+dist/
+frontend/dist/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+
+# IDE / System files
+.vscode/
+.firebase/
+.firebaserc
+.oxlintrc.json
+restore.js
+restoreApp.js

@@ -1,0 +1,13 @@
+[
+  {
+    "_id": "1782302138049",
+    "username": "abc",
+    "email": "abc@gmail.com",
+    "password": "$2a$10$S.ChRHx.z1iC4oQCR7y2/uvF0f/pLCLVGPqLQ2QtO.gAvl2qiBcq6",
+    "telegramConnected": false,
+    "createdAt": "2026-06-24T11:55:38.049Z",
+    "telegramSession": null,
+    "telegramPhone": null,
+    "telegramUserId": null
+  }
+]
